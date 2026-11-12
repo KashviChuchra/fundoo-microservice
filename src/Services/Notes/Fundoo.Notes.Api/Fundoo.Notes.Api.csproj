@@ -1,0 +1,25 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+	<PropertyGroup>
+		<TargetFramework>net8.0</TargetFramework>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<UserSecretsId>5e9ac342-740c-4d45-aa25-44fcc2cd6f80</UserSecretsId>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Asp.Versioning.Mvc" Version="8.1.1" />
+		<PackageReference Include="AspNetCore.HealthChecks.NpgSql" Version="8.0.2" />
+		<PackageReference Include="AspNetCore.HealthChecks.UI.Client" Version="8.0.1" />
+		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.31" />
+		<PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.31" />
+		<PackageReference Include="Npgsql" Version="8.0.9" />
+		<PackageReference Include="Swashbuckle.AspNetCore" Version="6.9.0" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\Fundoo.Notes.Application\Fundoo.Notes.Application.csproj" />
+		<ProjectReference Include="..\Fundoo.Notes.Infrastructure\Fundoo.Notes.Infrastructure.csproj" />
+	</ItemGroup>
+
+</Project>

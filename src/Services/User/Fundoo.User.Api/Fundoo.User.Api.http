@@ -1,0 +1,48 @@
+@Fundoo.User.Api_HostAddress = http://localhost:5238
+
+GET {{Fundoo.User.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
+
+POST {{Fundoo.User.Api_HostAddress}}/api/auth/register
+Content-Type: application/json
+
+{
+  "firstName": "John",
+  "lastName": "Doe",
+  "email": "john.doe@example.com",
+  "password": "Password@123"
+}
+
+###
+
+POST {{Fundoo.User.Api_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "john.doe@example.com",
+  "password": "Password@123"
+}
+
+###
+
+POST {{Fundoo.User.Api_HostAddress}}/api/auth/forgot-password
+Content-Type: application/json
+
+{
+  "email": "john.doe@example.com"
+}
+
+###
+
+POST {{Fundoo.User.Api_HostAddress}}/api/auth/reset-password
+Content-Type: application/json
+
+{
+  "email": "john.doe@example.com",
+  "token": "REPLACE_WITH_RESET_TOKEN",
+  "newPassword": "NewPassword@123"
+}
+
+###

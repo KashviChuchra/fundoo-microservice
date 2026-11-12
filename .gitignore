@@ -1,0 +1,21 @@
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.sln.docstates
+
+# Build output
+**/bin/
+**/obj/
+
+# IDE files
+.idea/
+.vscode/
+
+# Logs
+*.log
+
+# Environment-specific configuration and secrets
+appsettings.Development.json
+appsettings.*.Development.json
