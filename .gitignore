@@ -19,3 +19,11 @@
 # Environment-specific configuration and secrets
 appsettings.Development.json
 appsettings.*.Development.json
+
+.vs/
+.idea/
+.vscode/
+*.log
+appsettings.Development.json
+appsettings.*.Development.json
+.git/
