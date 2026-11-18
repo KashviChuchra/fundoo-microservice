@@ -7,5 +7,6 @@
 		public string? Token { get; set; }
 
 		public Guid? ChallengeId { get; set; }
+		
 	}
 }

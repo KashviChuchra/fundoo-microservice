@@ -1,9 +1,9 @@
-﻿using Fundoo.User.Domain;
-using Fundoo.User.Domain.Entities;
+﻿using Fundoo.User.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace Fundoo.User.Infrastructure.Persistence
 {
+    // 1000 users- concurently, 1000 db context will be created
     public class UserDbContext : DbContext
     {
         public UserDbContext(DbContextOptions<UserDbContext> options): base(options)

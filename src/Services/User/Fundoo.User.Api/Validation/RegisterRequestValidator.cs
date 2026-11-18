@@ -1,5 +1,4 @@
-﻿
-using FluentValidation;
+﻿using FluentValidation;
 using Fundoo.User.Api.Contracts;
 
 namespace Fundoo.User.Api.Validation
@@ -25,5 +24,9 @@ namespace Fundoo.User.Api.Validation
                 .NotEmpty()
                 .MinimumLength(8);
         }
+        // to add custom messages- .WithMessage()
+        // custom validation rules- .Must()
+        // when not to use- database entities, simple validation logic
+        // provides- reusaibility, custom validation
     }
 }

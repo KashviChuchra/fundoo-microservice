@@ -2,6 +2,7 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\Fundoo.User.Application\Fundoo.User.Application.csproj" />
+		<ProjectReference Include="..\..\Messaging\Fundoo.Messaging.Domain\Fundoo.Messaging.Domain.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -17,6 +18,7 @@
 		<PackageReference Include="Google.Apis.Auth" Version="1.73.0" />
 		<PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.4" />
 		<PackageReference Include="Polly.RateLimiting" Version="8.9.0" />
+		<PackageReference Include="Confluent.Kafka" Version="2.5.0" />
 	</ItemGroup>
 
 	<PropertyGroup>

@@ -10,7 +10,7 @@ namespace Fundoo.User.Api.Controllers
     public class AuthController : ControllerBase
     {
         private readonly IAuthService _authService;
-        private readonly IValidator<RegisterRequest>? _registerValidator;
+        private readonly IValidator<RegisterRequest> _registerValidator;
 
         public AuthController(IAuthService authService, IValidator<RegisterRequest>? registerValidator = null)
         {
@@ -21,7 +21,7 @@ namespace Fundoo.User.Api.Controllers
         [HttpPost("google")]
         public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginRequest request, CancellationToken cancellationToken)
         {
-            var result = await _authService.GoogleLoginAsync(request.IdToken, cancellationToken);
+            var result = await _authService.GoogleLoginAsync(request.Code, request.RedirectUri, cancellationToken);
 
             if (!result.Success)
             {

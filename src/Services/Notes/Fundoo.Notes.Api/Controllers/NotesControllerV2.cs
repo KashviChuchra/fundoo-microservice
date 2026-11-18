@@ -23,8 +23,7 @@ namespace Fundoo.Notes.Api.Controllers
 
         private Guid? GetUserId()
         {
-            var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier)
-                              ?? User.FindFirstValue("sub");
+            var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
 
             if (Guid.TryParse(userIdValue, out var userId))
             {
@@ -33,11 +32,9 @@ namespace Fundoo.Notes.Api.Controllers
 
             return null;
         }
-
+        
         [HttpPost]
-        public async Task<IActionResult> Create(
-            [FromBody] CreateNoteRequest request,
-            CancellationToken cancellationToken)
+        public async Task<IActionResult> Create([FromBody] CreateNoteRequest request,CancellationToken cancellationToken)
         {
             var userId = GetUserId();
 

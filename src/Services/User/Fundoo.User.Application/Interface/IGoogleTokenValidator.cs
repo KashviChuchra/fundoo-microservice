@@ -4,5 +4,5 @@ namespace Fundoo.User.Application.Interface;
 
 public interface IGoogleTokenValidator
 {
-    Task<GoogleUserInfo?> ValidateAsync(string idToken, CancellationToken cancellationToken);
+    Task<GoogleUserInfo?> ExchangeCodeAndValidateAsync(string authorizationCode, string redirectUri, CancellationToken cancellationToken);
 }

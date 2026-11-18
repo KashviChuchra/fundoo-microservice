@@ -1,5 +1,4 @@
 using Fundoo.User.Application.Interface;
-using Fundoo.User.Domain;
 using Fundoo.User.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 

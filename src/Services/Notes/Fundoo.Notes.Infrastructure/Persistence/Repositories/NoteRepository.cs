@@ -4,7 +4,7 @@ using Fundoo.Notes.Infrastructure.Persistence;
 using Npgsql;
 using NpgsqlTypes;
 
-namespace Fundoo.Notes.Infrastructure.Repositories
+namespace Fundoo.Notes.Infrastructure.Persistence.Repositories
 {
     public class NoteRepository : INoteRepository
     {

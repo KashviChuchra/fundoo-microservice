@@ -19,6 +19,7 @@
     <ProjectReference Include="..\..\src\Services\User\Fundoo.User.Api\Fundoo.User.Api.csproj" />
     <ProjectReference Include="..\..\src\Services\User\Fundoo.User.Application\Fundoo.User.Application.csproj" />
     <ProjectReference Include="..\..\src\Services\User\Fundoo.User.Domain\Fundoo.User.Domain.csproj" />
+    <ProjectReference Include="..\..\src\Services\User\Fundoo.User.Infrastructure\Fundoo.User.Infrastructure.csproj" />
   </ItemGroup>
 
   <ItemGroup>

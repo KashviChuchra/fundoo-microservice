@@ -2,7 +2,7 @@ using Fundoo.User.Application.Interface;
 using Microsoft.Extensions.Logging;
 using System.Net.Http.Json;
 
-namespace Fundoo.User.Infrastructure.Http
+namespace Fundoo.User.Infrastructure.Messaging.Http
 {
     
     public sealed class HttpMessagingClient : IMessagingClient
@@ -16,11 +16,7 @@ namespace Fundoo.User.Infrastructure.Http
             _logger = logger;
         }
 
-        public async Task SendLoginOtpEmailAsync(
-            string recipientName,
-            string toEmail,
-            string code,
-            CancellationToken cancellationToken)
+        public async Task SendLoginOtpEmailAsync(string recipientName, string toEmail, string code, CancellationToken cancellationToken)
         {
             var payload = new
             {
@@ -38,11 +34,7 @@ namespace Fundoo.User.Infrastructure.Http
             }
         }
 
-        public async Task SendPasswordResetEmailAsync(
-            string recipientName,
-            string toEmail,
-            string resetToken,
-            CancellationToken cancellationToken)
+        public async Task SendPasswordResetEmailAsync(string recipientName, string toEmail, string resetToken,CancellationToken cancellationToken)
         {
             string plainBody =
                 $"Hi {recipientName},\n\n" +
@@ -71,10 +63,7 @@ namespace Fundoo.User.Infrastructure.Http
 
             try
             {
-                var response = await _httpClient.PostAsJsonAsync(
-                    "api/email/send",
-                    payload,
-                    cancellationToken);
+                var response = await _httpClient.PostAsJsonAsync("api/email/send", payload, cancellationToken);
 
                 if (!response.IsSuccessStatusCode)
                 {

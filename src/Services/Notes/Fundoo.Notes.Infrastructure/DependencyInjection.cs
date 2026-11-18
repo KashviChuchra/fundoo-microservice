@@ -1,6 +1,6 @@
 ﻿using Fundoo.Notes.Application.Interfaces;
 using Fundoo.Notes.Infrastructure.Persistence;
-using Fundoo.Notes.Infrastructure.Repositories;
+using Fundoo.Notes.Infrastructure.Persistence.Repositories;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 

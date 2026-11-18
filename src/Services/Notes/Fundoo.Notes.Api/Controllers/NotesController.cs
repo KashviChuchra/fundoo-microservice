@@ -76,8 +76,7 @@ namespace Fundoo.Notes.Api.Controllers
         }
 
         [HttpGet("trash")]
-        public async Task<IActionResult> GetTrashed(
-            CancellationToken cancellationToken)
+        public async Task<IActionResult> GetTrashed(CancellationToken cancellationToken)
         {
             var userId = GetUserId();
 
@@ -92,9 +91,7 @@ namespace Fundoo.Notes.Api.Controllers
         }
 
         [HttpGet("{id:guid}")]
-        public async Task<IActionResult> GetById(
-            Guid id,
-            CancellationToken cancellationToken)
+        public async Task<IActionResult> GetById(Guid id,CancellationToken cancellationToken)
         {
             var userId = GetUserId();
 
@@ -115,10 +112,7 @@ namespace Fundoo.Notes.Api.Controllers
         }
 
         [HttpPut("{id:guid}")]
-        public async Task<IActionResult> Update(
-            Guid id,
-            [FromBody] UpdateNoteRequest request,
-            CancellationToken cancellationToken)
+        public async Task<IActionResult> Update(Guid id,[FromBody] UpdateNoteRequest request,CancellationToken cancellationToken)
         {
             var userId = GetUserId();
 
@@ -147,9 +141,7 @@ namespace Fundoo.Notes.Api.Controllers
         }
 
         [HttpDelete("{id:guid}")]
-        public async Task<IActionResult> Delete(
-            Guid id,
-            CancellationToken cancellationToken)
+        public async Task<IActionResult> Delete(Guid id,CancellationToken cancellationToken)
         {
             var userId = GetUserId();
 
@@ -170,9 +162,7 @@ namespace Fundoo.Notes.Api.Controllers
         }
 
         [HttpPatch("{id:guid}/archive")]
-        public async Task<IActionResult> Archive(
-            Guid id,
-            CancellationToken cancellationToken)
+        public async Task<IActionResult> Archive(Guid id,CancellationToken cancellationToken)
         {
             var userId = GetUserId();
 
@@ -193,9 +183,7 @@ namespace Fundoo.Notes.Api.Controllers
         }
 
         [HttpPatch("{id:guid}/unarchive")]
-        public async Task<IActionResult> Unarchive(
-            Guid id,
-            CancellationToken cancellationToken)
+        public async Task<IActionResult> Unarchive(Guid id,CancellationToken cancellationToken)
         {
             var userId = GetUserId();
 
@@ -216,9 +204,7 @@ namespace Fundoo.Notes.Api.Controllers
         }
 
         [HttpPatch("{id:guid}/trash")]
-        public async Task<IActionResult> Trash(
-            Guid id,
-            CancellationToken cancellationToken)
+        public async Task<IActionResult> Trash(Guid id,CancellationToken cancellationToken)
         {
             var userId = GetUserId();
 
@@ -239,9 +225,7 @@ namespace Fundoo.Notes.Api.Controllers
         }
 
         [HttpPatch("{id:guid}/restore")]
-        public async Task<IActionResult> Restore(
-            Guid id,
-            CancellationToken cancellationToken)
+        public async Task<IActionResult> Restore(Guid id,CancellationToken cancellationToken)
         {
             var userId = GetUserId();
 
@@ -262,9 +246,7 @@ namespace Fundoo.Notes.Api.Controllers
         }
 
         [HttpPatch("{id:guid}/pin")]
-        public async Task<IActionResult> Pin(
-            Guid id,
-            CancellationToken cancellationToken)
+        public async Task<IActionResult> Pin(Guid id,CancellationToken cancellationToken)
         {
             var userId = GetUserId();
 
@@ -285,9 +267,7 @@ namespace Fundoo.Notes.Api.Controllers
         }
 
         [HttpPatch("{id:guid}/unpin")]
-        public async Task<IActionResult> Unpin(
-            Guid id,
-            CancellationToken cancellationToken)
+        public async Task<IActionResult> Unpin(Guid id,CancellationToken cancellationToken)
         {
             var userId = GetUserId();
 

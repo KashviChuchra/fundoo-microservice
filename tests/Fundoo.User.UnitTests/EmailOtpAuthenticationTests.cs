@@ -1,6 +1,5 @@
 using Fundoo.User.Application.Interface;
 using Fundoo.User.Application.Services;
-using Fundoo.User.Domain;
 using Fundoo.User.Domain.Entities;
 using Moq;
 using Xunit;

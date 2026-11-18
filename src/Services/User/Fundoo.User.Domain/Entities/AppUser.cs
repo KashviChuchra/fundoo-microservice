@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Fundoo.User.Domain
+namespace Fundoo.User.Domain.Entities
 {
     public class AppUser
     {

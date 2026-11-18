@@ -18,8 +18,12 @@ public static class MessagingApplicationExtensions
         services.Configure<EmailSettings>(options =>
             configuration.GetSection("EmailSettings").Bind(options));
 
+        services.Configure<KafkaMessagingOptions>(options =>
+            configuration.GetSection("Kafka").Bind(options));
+
         // Register the email service
         services.AddScoped<IEmailService, EmailService>();
+        services.AddHostedService<KafkaEmailConsumer>();
 
         return services;
     }

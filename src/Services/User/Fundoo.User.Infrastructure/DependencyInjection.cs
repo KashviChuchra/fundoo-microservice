@@ -1,14 +1,16 @@
 using Fundoo.User.Application.Interface;
-using Fundoo.User.Infrastructure.Http;
 using Fundoo.User.Infrastructure.Persistence;
 using Fundoo.User.Infrastructure.Persistence.Repositories;
 using Fundoo.User.Infrastructure.Security;
+using Fundoo.User.Infrastructure.Messaging;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System.Threading.RateLimiting;
 using Polly;
 using Microsoft.Extensions.Http.Resilience;
+using Fundoo.User.Infrastructure.Messaging.Http;
+using Fundoo.User.Infrastructure.Messaging.Kafka;
 
 namespace Fundoo.User.Infrastructure
 {
@@ -35,13 +37,20 @@ namespace Fundoo.User.Infrastructure
             services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
 
             services.AddScoped<ITokenService, JwtTokenService>();
-            services.AddScoped<IGoogleTokenValidator, GoogleTokenValidator>();
+
+            services.AddHttpClient<IGoogleTokenValidator, GoogleTokenValidator>();
+
+
+            services.Configure<KafkaMessagingOptions>(configuration.GetSection("Kafka"));
+            services.AddSingleton<KafkaMessagingClient>();
+            services.AddSingleton<IKafkaMessagingClient>(services => services.GetRequiredService<KafkaMessagingClient>());
 
             // Messaging client with resilience
             string messagingBaseUrl = configuration["MessagingService:BaseUrl"]
                 ?? throw new InvalidOperationException("MessagingService:BaseUrl is not configured.");
 
-            services.AddHttpClient<IMessagingClient, HttpMessagingClient>(client =>
+            // Retain HttpMessagingClient as the feature-flagged fallback while Kafka is enabled.
+            services.AddHttpClient<HttpMessagingClient>(client =>
             {
                 client.BaseAddress = new Uri(messagingBaseUrl);
             })
@@ -69,6 +78,8 @@ namespace Fundoo.User.Infrastructure
                 options.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(30);
                 options.CircuitBreaker.BreakDuration = TimeSpan.FromSeconds(15);
             });
+
+            services.AddScoped<IMessagingClient, HybridMessagingClient>();
 
 
             // custom pipeline, add manually

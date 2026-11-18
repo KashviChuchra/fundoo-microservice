@@ -13,7 +13,6 @@ namespace Fundoo.Notes.Api.Controllers
     public class LabelsController : ControllerBase
     {
         private readonly ILabelService _labelService;
-
         public LabelsController(ILabelService labelService)
         {
             _labelService = labelService;
@@ -21,9 +20,7 @@ namespace Fundoo.Notes.Api.Controllers
 
         private Guid? GetUserId()
         {
-            var userIdValue =
-                User.FindFirstValue(ClaimTypes.NameIdentifier)
-                ?? User.FindFirstValue("sub");
+            var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
 
             if (Guid.TryParse(userIdValue, out var userId))
             {
@@ -34,26 +31,15 @@ namespace Fundoo.Notes.Api.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create(
-            [FromBody] CreateLabelRequest request,
-            CancellationToken cancellationToken)
+        public async Task<IActionResult> Create([FromBody] CreateLabelRequest request,CancellationToken cancellationToken)
         {
             var userId = GetUserId();
-
-            if (userId is null)
-                return Unauthorized();
+            if (userId is null) return Unauthorized();
 
             try
             {
-                var label = await _labelService.CreateAsync(
-                    userId.Value,
-                    request,
-                    cancellationToken);
-
-                return CreatedAtAction(
-                    nameof(GetById),
-                    new { id = label.Id },
-                    label);
+                var label = await _labelService.CreateAsync(userId.Value,request,cancellationToken);
+                return CreatedAtAction(nameof(GetById), new { id = label.Id }, label);
             }
             catch (ArgumentException ex)
             {
@@ -62,35 +48,25 @@ namespace Fundoo.Notes.Api.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAll(
-            CancellationToken cancellationToken)
+        public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
         {
             var userId = GetUserId();
 
-            if (userId is null)
-                return Unauthorized();
+            if (userId is null) return Unauthorized();
 
-            var labels = await _labelService.GetAllAsync(
-                userId.Value,
-                cancellationToken);
+            var labels = await _labelService.GetAllAsync(userId.Value,cancellationToken);
 
             return Ok(labels);
         }
 
         [HttpGet("{id:guid}")]
-        public async Task<IActionResult> GetById(
-            Guid id,
-            CancellationToken cancellationToken)
+        public async Task<IActionResult> GetById(Guid id,CancellationToken cancellationToken)
         {
             var userId = GetUserId();
 
-            if (userId is null)
-                return Unauthorized();
+            if (userId is null) return Unauthorized();
 
-            var label = await _labelService.GetByIdAsync(
-                id,
-                userId.Value,
-                cancellationToken);
+            var label = await _labelService.GetByIdAsync(id,userId.Value,cancellationToken);
 
             if (label is null)
             {
@@ -101,10 +77,7 @@ namespace Fundoo.Notes.Api.Controllers
         }
 
         [HttpPut("{id:guid}")]
-        public async Task<IActionResult> Rename(
-            Guid id,
-            [FromBody] RenameLabelRequest request,
-            CancellationToken cancellationToken)
+        public async Task<IActionResult> Rename(Guid id,[FromBody] RenameLabelRequest request,CancellationToken cancellationToken)
         {
             var userId = GetUserId();
 
@@ -113,11 +86,7 @@ namespace Fundoo.Notes.Api.Controllers
 
             try
             {
-                var renamed = await _labelService.RenameAsync(
-                    id,
-                    userId.Value,
-                    request,
-                    cancellationToken);
+                var renamed = await _labelService.RenameAsync(id,userId.Value,request,cancellationToken);
 
                 if (!renamed)
                 {
@@ -133,19 +102,13 @@ namespace Fundoo.Notes.Api.Controllers
         }
 
         [HttpDelete("{id:guid}")]
-        public async Task<IActionResult> Delete(
-            Guid id,
-            CancellationToken cancellationToken)
+        public async Task<IActionResult> Delete(Guid id,CancellationToken cancellationToken)
         {
             var userId = GetUserId();
 
-            if (userId is null)
-                return Unauthorized();
+            if (userId is null) return Unauthorized();
 
-            var deleted = await _labelService.DeleteAsync(
-                id,
-                userId.Value,
-                cancellationToken);
+            var deleted = await _labelService.DeleteAsync(id,userId.Value,cancellationToken);
 
             if (!deleted)
             {
@@ -156,22 +119,11 @@ namespace Fundoo.Notes.Api.Controllers
         }
 
         [HttpPost("{labelId:guid}/notes/{noteId:guid}")]
-        public async Task<IActionResult> AddToNote(
-            Guid labelId,
-            Guid noteId,
-            CancellationToken cancellationToken)
+        public async Task<IActionResult> AddToNote(Guid labelId,Guid noteId,CancellationToken cancellationToken)
         {
             var userId = GetUserId();
-
-            if (userId is null)
-                return Unauthorized();
-
-            var added = await _labelService.AddToNoteAsync(
-                noteId,
-                labelId,
-                userId.Value,
-                cancellationToken);
-
+            if (userId is null) return Unauthorized();
+            var added = await _labelService.AddToNoteAsync(noteId,labelId,userId.Value,cancellationToken);
             if (!added)
             {
                 return NotFound(new
@@ -184,21 +136,13 @@ namespace Fundoo.Notes.Api.Controllers
         }
 
         [HttpDelete("{labelId:guid}/notes/{noteId:guid}")]
-        public async Task<IActionResult> RemoveFromNote(
-            Guid labelId,
-            Guid noteId,
-            CancellationToken cancellationToken)
+        public async Task<IActionResult> RemoveFromNote(Guid labelId,Guid noteId,CancellationToken cancellationToken)
         {
             var userId = GetUserId();
 
-            if (userId is null)
-                return Unauthorized();
+            if (userId is null) return Unauthorized();
 
-            var removed = await _labelService.RemoveFromNoteAsync(
-                noteId,
-                labelId,
-                userId.Value,
-                cancellationToken);
+            var removed = await _labelService.RemoveFromNoteAsync(noteId,labelId,userId.Value,cancellationToken);
 
             if (!removed)
             {

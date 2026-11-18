@@ -1,4 +1,3 @@
-using Fundoo.User.Domain;
 using Fundoo.User.Domain.Entities;
 
 namespace Fundoo.User.Application.Interface

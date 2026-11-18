@@ -71,7 +71,7 @@ namespace Fundoo.User.Application.Services
 
             var user = new AppUser
             {
-                Id = Guid.NewGuid(),
+                Id = Guid.NewGuid(), // how to ensure Guid is always unique if its generated in system
                 FirstName = firstName,
                 LastName = lastName,
                 Email = email,
@@ -91,7 +91,7 @@ namespace Fundoo.User.Application.Services
 
             return AuthResult.SuccessResult("Registration successful.");
         }
-       public async Task<AuthResult> LoginAsync(string email,string password, CancellationToken cancellationToken)
+        public async Task<AuthResult> LoginAsync(string email,string password, CancellationToken cancellationToken)
         {
             if (string.IsNullOrWhiteSpace(email) ||
                 string.IsNullOrWhiteSpace(password))
@@ -146,7 +146,6 @@ namespace Fundoo.User.Application.Services
                 "A verification code has been sent to your email.",
                 challengeId: challenge.Id);
         }
-
         public async Task<AuthResult> VerifyLoginOtpAsync(Guid challengeId, string code, CancellationToken cancellationToken)
         {
             if (challengeId == Guid.Empty || string.IsNullOrWhiteSpace(code))
@@ -181,15 +180,14 @@ namespace Fundoo.User.Application.Services
             await _userRepository.MarkEmailOtpChallengeUsedAsync(challenge, cancellationToken);
             return AuthResult.SuccessResult("Login successful.", _tokenService.CreateAccessToken(user));
         }
-
-        public async Task<AuthResult> GoogleLoginAsync(string idToken, CancellationToken cancellationToken)
+        public async Task<AuthResult> GoogleLoginAsync(string authorizationCode, string redirectUri, CancellationToken cancellationToken)
         {
             if (_googleTokenValidator == null)
             {
                 throw new InvalidOperationException("Google token validation is not configured.");
             }
 
-            var googleUser = await _googleTokenValidator.ValidateAsync(idToken, cancellationToken);
+            var googleUser = await _googleTokenValidator.ExchangeCodeAndValidateAsync(authorizationCode, redirectUri, cancellationToken);
             if (googleUser == null)
             {
                 return AuthResult.FailureResult("Invalid Google sign-in token.");
@@ -316,35 +314,28 @@ namespace Fundoo.User.Application.Services
 
         // ── Helpers ───────────────────────────────────────────────────────────
 
-        private async Task<PasswordResetToken?> FindValidTokenForUserAsync(
-            Guid userId,
-            string rawToken,
-            CancellationToken cancellationToken)
+        private async Task<PasswordResetToken?> FindValidTokenForUserAsync(Guid userId,string rawToken,CancellationToken cancellationToken)
         {
             string tokenHash = HashToken(rawToken);
             var stored = await _userRepository.GetValidResetTokenAsync(tokenHash, cancellationToken);
             if (stored == null || stored.UserId != userId) return null;
             return stored;
         }
-
         private static string HashToken(string token)
         {
             byte[] hash = System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(token));
             return Convert.ToHexString(hash).ToLowerInvariant();
         }
-
         private static string GenerateSecureToken()
         {
             var bytes = new byte[32];
             System.Security.Cryptography.RandomNumberGenerator.Fill(bytes);
             return Convert.ToHexString(bytes).ToLowerInvariant();
         }
-
         private static string GenerateOtpCode()
         {
             return System.Security.Cryptography.RandomNumberGenerator.GetInt32(100000, 1000000).ToString();
         }
-
         private static bool IsValidPassword(string password)
         {
             return password.Length >= 8

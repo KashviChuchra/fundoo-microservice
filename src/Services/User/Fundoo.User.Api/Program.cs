@@ -9,8 +9,8 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
 using FluentValidation;
-using Fundoo.User.Api.Contracts;
 using Fundoo.User.Api.Validation;
+using Fundoo.User.Api.Contracts;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -139,21 +139,19 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-app.MapGet("/health", () => Results.Ok(new
-{
-    Service = "Fundoo.User.Api",
-    Status = "Healthy"
-}));
+
 
 // add map health checks
-app.MapHealthChecks("/health");
+app.MapHealthChecks("/health",
+    new HealthCheckOptions
+    {
+        ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
+    });
 app.MapHealthChecks("/health/live", new HealthCheckOptions
 {
     Predicate = check => check.Tags.Contains("live"),
     ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
 });
-
-
 app.MapHealthChecks("/health/ready", new HealthCheckOptions
 {
     Predicate = check => check.Tags.Contains("ready"),

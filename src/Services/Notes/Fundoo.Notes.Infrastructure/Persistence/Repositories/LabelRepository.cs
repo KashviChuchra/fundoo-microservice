@@ -3,7 +3,7 @@ using Fundoo.Notes.Domain.Entities;
 using Fundoo.Notes.Infrastructure.Persistence;
 using Npgsql;
 
-namespace Fundoo.Notes.Infrastructure.Repositories
+namespace Fundoo.Notes.Infrastructure.Persistence.Repositories
 {
     public class LabelRepository : ILabelRepository
     {
