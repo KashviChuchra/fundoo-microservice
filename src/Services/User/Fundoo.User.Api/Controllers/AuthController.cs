@@ -18,23 +18,7 @@ namespace Fundoo.User.Api.Controllers
             _registerValidator = registerValidator;
         }
 
-        [HttpPost("google")]
-        public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginRequest request, CancellationToken cancellationToken)
-        {
-            var result = await _authService.GoogleLoginAsync(request.Code, request.RedirectUri, cancellationToken);
-
-            if (!result.Success)
-            {
-                return Unauthorized(new AuthResponse { Message = result.Message });
-            }
-
-            return Ok(new AuthResponse
-            {
-                Message = result.Message,
-                Token = result.Token
-            });
-        }
-
+        
         [HttpPost("register")]
         public async Task<IActionResult> Register( [FromBody] RegisterRequest request, CancellationToken cancellationToken)
         {
@@ -103,23 +87,6 @@ namespace Fundoo.User.Api.Controllers
             });
         }
 
-        [HttpPost("verify-login-otp")]
-        public async Task<IActionResult> VerifyLoginOtp([FromBody] VerifyLoginOtpRequest request, CancellationToken cancellationToken)
-        {
-            var result = await _authService.VerifyLoginOtpAsync(request.ChallengeId, request.Code, cancellationToken);
-
-            if (!result.Success)
-            {
-                return Unauthorized(new AuthResponse { Message = result.Message });
-            }
-
-            return Ok(new AuthResponse
-            {
-                Message = result.Message,
-                Token = result.Token
-            });
-        }
-
         [HttpPost("forgot-password")]
         public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request,CancellationToken cancellationToken)
         {
@@ -161,5 +128,40 @@ namespace Fundoo.User.Api.Controllers
                 Message = result.Message
             });
         }
+        
+        [HttpPost("google")]
+        public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginRequest request, CancellationToken cancellationToken)
+        {
+            var result = await _authService.GoogleLoginAsync(request.Code, request.RedirectUri, cancellationToken);
+
+            if (!result.Success)
+            {
+                return Unauthorized(new AuthResponse { Message = result.Message });
+            }
+
+            return Ok(new AuthResponse
+            {
+                Message = result.Message,
+                Token = result.Token
+            });
+        }
+
+        [HttpPost("verify-login-otp")]
+        public async Task<IActionResult> VerifyLoginOtp([FromBody] VerifyLoginOtpRequest request, CancellationToken cancellationToken)
+        {
+            var result = await _authService.VerifyLoginOtpAsync(request.ChallengeId, request.Code, cancellationToken);
+
+            if (!result.Success)
+            {
+                return Unauthorized(new AuthResponse { Message = result.Message });
+            }
+
+            return Ok(new AuthResponse
+            {
+                Message = result.Message,
+                Token = result.Token
+            });
+        }
+
     }
 }

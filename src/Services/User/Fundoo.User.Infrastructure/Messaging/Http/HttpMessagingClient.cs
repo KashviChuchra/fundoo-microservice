@@ -1,14 +1,14 @@
 using Fundoo.User.Application.Interface;
 using Microsoft.Extensions.Logging;
-using System.Net.Http.Json;
+using System.Net.Http.Json; // Provides PostAsJsonAsync
 
 namespace Fundoo.User.Infrastructure.Messaging.Http
 {
     
     public sealed class HttpMessagingClient : IMessagingClient
     {
-        private readonly HttpClient _httpClient;
-        private readonly ILogger<HttpMessagingClient> _logger;
+        private readonly HttpClient _httpClient; // .net class for sending HTTP requests to another service or website.
+        private readonly ILogger<HttpMessagingClient> _logger; // readonly -> they’re assigned in the constructor and aren’t replaced later.
 
         public HttpMessagingClient(HttpClient httpClient, ILogger<HttpMessagingClient> logger)
         {
@@ -34,7 +34,7 @@ namespace Fundoo.User.Infrastructure.Messaging.Http
             }
         }
 
-        public async Task SendPasswordResetEmailAsync(string recipientName, string toEmail, string resetToken,CancellationToken cancellationToken)
+        public async Task SendPasswordResetEmailAsync(string recipientName, string toEmail, string resetToken, CancellationToken cancellationToken)
         {
             string plainBody =
                 $"Hi {recipientName},\n\n" +
@@ -63,7 +63,8 @@ namespace Fundoo.User.Infrastructure.Messaging.Http
 
             try
             {
-                var response = await _httpClient.PostAsJsonAsync("api/email/send", payload, cancellationToken);
+                var response = await _httpClient.PostAsJsonAsync("api/email/send", payload, cancellationToken); // postasjson serializes an object to JSON and sends it in an HTTP POST request.
+                // The configured HttpClient base address is combined with that path.
 
                 if (!response.IsSuccessStatusCode)
                 {

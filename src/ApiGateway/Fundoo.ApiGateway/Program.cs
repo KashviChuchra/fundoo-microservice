@@ -12,14 +12,8 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-//  yarp
-//builder.Services
-//    .AddReverseProxy()
-//    .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"));
-
-
-// load ocelot.json/configuration
-builder.Configuration.AddJsonFile("ocelot.json", optional: false, reloadOnChange: true); // if file doesn't exist throw error, 
+// load ocelot.json/configuration - routes
+builder.Configuration.AddJsonFile("ocelot.json", optional: false, reloadOnChange: true); // false= if file doesn't exist throw error, 
 builder.Services.AddOcelot(builder.Configuration);
 
 var jwt = builder.Configuration.GetSection("Jwt");
@@ -44,6 +38,7 @@ builder.Services
         };
     });
 
+
 builder.Services.AddAuthorization();
 
 
@@ -64,13 +59,10 @@ builder.Services.AddAuthorization();
 //    options.GlobalLimiter =
 //        PartitionedRateLimiter.Create<HttpContext, string>(context =>
 //        {
-//            // get request path - /auth/user/login
-//            string path = context.Request.Path.Value?.ToLowerInvariant() ?? "";
+//            string path = context.Request.Path.Value?.ToLowerInvariant() ?? "";             // get request path - /auth/user/login
+//            string clientIp = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";  // get client IP
 
-//            // get client IP
-//            string clientIp = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
-
-//            // rate limit grp+ its limit
+//            // rate limit grp + its limit
 //            string group;
 //            int limit;
 
@@ -115,7 +107,6 @@ builder.Services.AddAuthorization();
 //    options.OnRejected = async (context, cancellationToken) =>
 //    {
 //        context.HttpContext.Response.ContentType = "application/json";
-
 //        await context.HttpContext.Response.WriteAsync(
 //            JsonSerializer.Serialize(new
 //            {
@@ -143,12 +134,12 @@ builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
+// app.UseRateLimiter(); // Built-in rate limiting middleware
 app.UseAuthentication();
 app.UseAuthorization();
 
 //app.UseCors();
 
-//app.UseRateLimiter(); // Built-in rate limiting middleware
 
 
 
@@ -171,10 +162,6 @@ app.MapGet("/health", () => Results.Ok(new
     Service = "Fundoo.ApiGateway",
     Status = "Healthy"
 }));
-
-// for yarp
-//app.MapReverseProxy();
-
 
 await app.UseOcelot();
 

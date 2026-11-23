@@ -13,11 +13,7 @@ public sealed class HybridMessagingClient : IMessagingClient
     private readonly KafkaMessagingOptions _options;
     private readonly ILogger<HybridMessagingClient> _logger;
 
-    public HybridMessagingClient(
-        IKafkaMessagingClient kafkaClient,
-        HttpMessagingClient httpClient,
-        IOptions<KafkaMessagingOptions> options,
-        ILogger<HybridMessagingClient> logger)
+    public HybridMessagingClient(IKafkaMessagingClient kafkaClient, HttpMessagingClient httpClient, IOptions<KafkaMessagingOptions> options,ILogger<HybridMessagingClient> logger)
     {
         _kafkaClient = kafkaClient;
         _httpClient = httpClient;

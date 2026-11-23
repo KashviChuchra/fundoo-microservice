@@ -1,5 +1,5 @@
 using System.Text.Json;
-using Confluent.Kafka;
+using Confluent.Kafka; // provides kafka producer+ messaging types
 using Fundoo.Messaging.Domain.Events;
 using Fundoo.User.Application.Interface;
 using Microsoft.Extensions.Logging;
@@ -9,24 +9,24 @@ namespace Fundoo.User.Infrastructure.Messaging.Kafka;
 
 public sealed class KafkaMessagingClient : IKafkaMessagingClient, IDisposable
 {
-    private readonly IProducer<string, string> _producer;
-    private readonly KafkaMessagingOptions _options;
+    private readonly IProducer<string, string> _producer;     // send messages to broker - key,value
+    private readonly KafkaMessagingOptions _options;         // message broker, topic, client settings
     private readonly ILogger<KafkaMessagingClient> _logger;
 
-    public KafkaMessagingClient( IOptions<KafkaMessagingOptions> options, ILogger<KafkaMessagingClient> logger)
+    public KafkaMessagingClient(IOptions<KafkaMessagingOptions> options, ILogger<KafkaMessagingClient> logger)
     {
         _options = options.Value;
         _logger = logger;
         _producer = new ProducerBuilder<string, string>(new ProducerConfig
         {
-            BootstrapServers = _options.BootstrapServers,
-            ClientId = _options.ClientId,
-            Acks = Acks.All,
+            BootstrapServers = _options.BootstrapServers,    // tells where to find kafka
+            ClientId = _options.ClientId,                    // helps prevent duplicate Kafka writes caused by producer retries.
+            Acks = Acks.All,                                // asks Kafka to confirm the write was acknowledged by its in-sync replicas.
             EnableIdempotence = true
-        }).Build();
+        }).Build();      // create producer instance
     }
 
-    public Task SendPasswordResetEmailAsync( string recipientName, string toEmail, string resetToken, CancellationToken cancellationToken)
+    public Task SendPasswordResetEmailAsync(string recipientName, string toEmail, string resetToken, CancellationToken cancellationToken)
     {
         string body = $"Hi {recipientName},\n\n" +
             "We received a request to reset your Fundoo password.\n\n" +
@@ -40,7 +40,6 @@ public sealed class KafkaMessagingClient : IKafkaMessagingClient, IDisposable
 
         return PublishAsync(new EmailNotificationRequested(Guid.NewGuid(), recipientName, toEmail, "Fundoo — Password Reset Request", body, htmlBody), cancellationToken);
     }
-
     public Task SendLoginOtpEmailAsync(string recipientName,string toEmail,string code,CancellationToken cancellationToken)
     {
         string body = $"Hi {recipientName},\n\nYour Fundoo login verification code is {code}. It expires in 10 minutes.";
@@ -49,7 +48,6 @@ public sealed class KafkaMessagingClient : IKafkaMessagingClient, IDisposable
 
         return PublishAsync(new EmailNotificationRequested(Guid.NewGuid(), recipientName, toEmail, "Fundoo — Your login verification code", body, htmlBody), cancellationToken);
     }
-
     private async Task PublishAsync(EmailNotificationRequested message, CancellationToken cancellationToken)
     {
         string payload = JsonSerializer.Serialize(message);
