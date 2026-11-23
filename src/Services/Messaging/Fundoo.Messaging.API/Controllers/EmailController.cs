@@ -5,9 +5,6 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Fundoo.Messaging.API.Controllers;
 
-/// <summary>
-/// Handles email-sending requests for the Fundoo Messaging microservice.
-/// </summary>
 [ApiController]
 [Route("api/[controller]")]
 [Produces("application/json")]
@@ -28,7 +25,7 @@ public sealed class EmailController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> Send([FromBody] SendEmailRequest request,CancellationToken cancellationToken)
+    public async Task<IActionResult> Send([FromBody] SendEmailRequest request, CancellationToken cancellationToken)
     {
         _logger.LogInformation("Received request to send email to {Recipient}.", request.To);
 
