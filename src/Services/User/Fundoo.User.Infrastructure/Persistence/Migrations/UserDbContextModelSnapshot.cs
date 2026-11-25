@@ -22,7 +22,7 @@ namespace Fundoo.User.Infrastructure.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("Fundoo.User.Domain.AppUser", b =>
+            modelBuilder.Entity("Fundoo.User.Domain.Entities.AppUser", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -68,7 +68,8 @@ namespace Fundoo.User.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("GoogleSubject")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasFilter("\"GoogleSubject\" IS NOT NULL");
 
                     b.HasIndex("NormalizedEmail")
                         .IsUnique();

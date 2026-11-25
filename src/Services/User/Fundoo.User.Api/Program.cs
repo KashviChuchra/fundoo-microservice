@@ -1,6 +1,10 @@
+using FluentValidation;
+using Fundoo.User.Api.Contracts;
+using Fundoo.User.Api.Validation;
 using Fundoo.User.Application.Interface;
 using Fundoo.User.Application.Services;
 using Fundoo.User.Infrastructure;
+using Fundoo.User.Infrastructure.Authentication;
 using HealthChecks.UI.Client;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
@@ -8,9 +12,6 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
-using FluentValidation;
-using Fundoo.User.Api.Validation;
-using Fundoo.User.Api.Contracts;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -72,6 +73,12 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
+builder.Services
+    .Configure<GoogleOAuthOptions>(
+        builder.Configuration.GetSection(
+            GoogleOAuthOptions.SectionName));
+
+builder.Services.AddHttpClient<IGoogleTokenValidator, GoogleTokenValidator>();
 builder.Services.AddUserInfrastructure(builder.Configuration);
 
 builder.Services.AddScoped<IAuthService, AuthService>();

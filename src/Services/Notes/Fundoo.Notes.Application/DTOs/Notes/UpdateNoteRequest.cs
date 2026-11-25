@@ -14,5 +14,8 @@ namespace Fundoo.Notes.Application.DTOs.Notes
         public string Color { get; set; } = "#FFFFFF";
 
         public bool IsPinned { get; set; }
+
+        [Required]
+        public DateTime ExpectedUpdatedAtUtc { get; set; }
     }
 }

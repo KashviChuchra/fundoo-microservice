@@ -132,6 +132,14 @@ namespace Fundoo.User.Api.Controllers
         [HttpPost("google")]
         public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginRequest request, CancellationToken cancellationToken)
         {
+            if (string.IsNullOrWhiteSpace(request.Code) || string.IsNullOrWhiteSpace(request.RedirectUri))
+            {
+                return BadRequest(new AuthResponse
+                {
+                    Message = "Authorization code and redirect URI are required."
+                });
+            }
+
             var result = await _authService.GoogleLoginAsync(request.Code, request.RedirectUri, cancellationToken);
 
             if (!result.Success)

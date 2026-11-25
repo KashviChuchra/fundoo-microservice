@@ -180,64 +180,190 @@ namespace Fundoo.User.Application.Services
             await _userRepository.MarkEmailOtpChallengeUsedAsync(challenge, cancellationToken);
             return AuthResult.SuccessResult("Login successful.", _tokenService.CreateAccessToken(user));
         }
-        public async Task<AuthResult> GoogleLoginAsync(string authorizationCode, string redirectUri, CancellationToken cancellationToken)
+        //public async Task<AuthResult> GoogleLoginAsync(string authorizationCode, string redirectUri, CancellationToken cancellationToken)
+        //{
+        //    if (string.IsNullOrWhiteSpace(authorizationCode) || string.IsNullOrWhiteSpace(redirectUri))
+        //    {
+        //        return AuthResult.FailureResult("Authorization code and redirect URI are required.");
+        //    }
+        //    if (_googleTokenValidator == null)
+        //    {
+        //        throw new InvalidOperationException("Google token validation is not configured.");
+        //    }
+
+        //    var googleUser = await _googleTokenValidator.ExchangeCodeAndValidateAsync(authorizationCode, redirectUri, cancellationToken);
+        //    if (googleUser == null || string.IsNullOrWhiteSpace(googleUser.Subject) || string.IsNullOrWhiteSpace(googleUser.Email) || !googleUser.EmailVerified)
+        //    {
+        //        return AuthResult.FailureResult("Google account could not be verified.");
+        //    }
+
+        //    string googleSubject = googleUser.Subject.Trim();
+        //    string email = googleUser.Email.Trim();
+        //    string normalizedEmail = email.ToUpperInvariant();
+
+        //    var user = await _userRepository.GetByGoogleSubjectAsync(googleUser.Subject, cancellationToken);
+        //    if (user == null)
+        //    {
+        //        user = await _userRepository.GetByNormalizedEmailAsync(normalizedEmail, cancellationToken);
+
+        //        if (user != null)
+        //        {
+        //            if (!user.IsActive || (!string.IsNullOrWhiteSpace(user.GoogleSubject) && user.GoogleSubject != googleSubject))
+        //            {
+        //                return AuthResult.FailureResult("Unable to link this Google account.");
+        //            }
+
+        //            user.GoogleSubject = googleSubject;
+        //            user.UpdatedAtUtc = DateTime.UtcNow;
+
+        //            await _userRepository.SaveChangesAsync(cancellationToken);
+        //        }
+        //        else
+        //        {
+        //            user = new AppUser
+        //            {
+        //                Id = Guid.NewGuid(),
+        //                FirstName = string.IsNullOrWhiteSpace(googleUser.FirstName) ? "Google" : googleUser.FirstName,
+        //                LastName = googleUser.LastName,
+        //                Email = googleUser.Email,
+        //                NormalizedEmail = normalizedEmail,
+        //                PasswordHash = _passwordHasher.Hash(GenerateSecureToken()),
+        //                GoogleSubject = googleUser.Subject,
+        //                IsActive = true,
+        //                CreatedAtUtc = DateTime.UtcNow,
+        //                UpdatedAtUtc = DateTime.UtcNow
+        //            };
+
+        //            if (!await _userRepository.AddAsync(user, cancellationToken))
+        //            {
+        //                return AuthResult.FailureResult("Unable to create the Google account.");
+        //            }
+        //        }
+        //    }
+
+        //    if (!user.IsActive)
+        //    {
+        //        return AuthResult.FailureResult("Unable to sign in with this Google account.");
+        //    }
+
+        //    return AuthResult.SuccessResult("Google login successful.", _tokenService.CreateAccessToken(user));
+        //}
+        public async Task<AuthResult> GoogleLoginAsync(
+    string authorizationCode,
+    string redirectUri,
+    CancellationToken cancellationToken)
         {
+            if (string.IsNullOrWhiteSpace(authorizationCode) ||
+                string.IsNullOrWhiteSpace(redirectUri))
+            {
+                return AuthResult.FailureResult(
+                    "Authorization code and redirect URI are required.");
+            }
+
             if (_googleTokenValidator == null)
             {
-                throw new InvalidOperationException("Google token validation is not configured.");
+                throw new InvalidOperationException(
+                    "Google token validation is not configured.");
             }
 
-            var googleUser = await _googleTokenValidator.ExchangeCodeAndValidateAsync(authorizationCode, redirectUri, cancellationToken);
-            if (googleUser == null)
+            var googleUser =
+                await _googleTokenValidator.ExchangeCodeAndValidateAsync(
+                    authorizationCode,
+                    redirectUri,
+                    cancellationToken);
+
+            if (googleUser == null ||
+                string.IsNullOrWhiteSpace(googleUser.Subject) ||
+                string.IsNullOrWhiteSpace(googleUser.Email) ||
+                !googleUser.EmailVerified)
             {
-                return AuthResult.FailureResult("Invalid Google sign-in token.");
+                return AuthResult.FailureResult(
+                    "Google account could not be verified.");
             }
 
-            var user = await _userRepository.GetByGoogleSubjectAsync(googleUser.Subject, cancellationToken);
+            string googleSubject = googleUser.Subject.Trim();
+            string email = googleUser.Email.Trim();
+            string normalizedEmail = email.ToUpperInvariant();
+
+            // First, identify the account by Google's stable subject identifier.
+            var user = await _userRepository.GetByGoogleSubjectAsync(
+                googleSubject,
+                cancellationToken);
+
             if (user == null)
             {
-                string normalizedEmail = googleUser.Email.Trim().ToUpperInvariant();
-                user = await _userRepository.GetByNormalizedEmailAsync(normalizedEmail, cancellationToken);
+                // If the email already belongs to a Fundoo account,
+                // link Google only when it is not already linked elsewhere.
+                user = await _userRepository.GetByNormalizedEmailAsync(
+                    normalizedEmail,
+                    cancellationToken);
 
                 if (user != null)
                 {
-                    if (!user.IsActive || (user.GoogleSubject != null && user.GoogleSubject != googleUser.Subject))
+                    if (!user.IsActive ||
+                        (!string.IsNullOrWhiteSpace(user.GoogleSubject) &&
+                         user.GoogleSubject != googleSubject))
                     {
-                        return AuthResult.FailureResult("Unable to link this Google account.");
+                        return AuthResult.FailureResult(
+                            "Unable to link this Google account.");
                     }
 
-                    user.GoogleSubject = googleUser.Subject;
-                    await _userRepository.SaveChangesAsync(cancellationToken);
+                    user.GoogleSubject = googleSubject;
+                    user.UpdatedAtUtc = DateTime.UtcNow;
+
+                    await _userRepository.SaveChangesAsync(
+                        cancellationToken);
                 }
                 else
                 {
                     user = new AppUser
                     {
                         Id = Guid.NewGuid(),
-                        FirstName = string.IsNullOrWhiteSpace(googleUser.FirstName) ? "Google" : googleUser.FirstName,
-                        LastName = googleUser.LastName,
-                        Email = googleUser.Email,
+
+                        FirstName = string.IsNullOrWhiteSpace(googleUser.FirstName)
+                            ? "Google"
+                            : googleUser.FirstName.Trim(),
+
+                        LastName = googleUser.LastName?.Trim() ?? string.Empty,
+
+                        Email = email,
                         NormalizedEmail = normalizedEmail,
-                        PasswordHash = _passwordHasher.Hash(GenerateSecureToken()),
-                        GoogleSubject = googleUser.Subject,
+
+                        // Google users do not know this generated password.
+                        PasswordHash = _passwordHasher.Hash(
+                            GenerateSecureToken()),
+
+                        GoogleSubject = googleSubject,
                         IsActive = true,
                         CreatedAtUtc = DateTime.UtcNow,
                         UpdatedAtUtc = DateTime.UtcNow
                     };
 
-                    if (!await _userRepository.AddAsync(user, cancellationToken))
+                    bool added = await _userRepository.AddAsync(
+                        user,
+                        cancellationToken);
+
+                    if (!added)
                     {
-                        return AuthResult.FailureResult("Unable to create the Google account.");
+                        return AuthResult.FailureResult(
+                            "Unable to create the Google account.");
                     }
                 }
             }
 
             if (!user.IsActive)
             {
-                return AuthResult.FailureResult("Unable to sign in with this Google account.");
+                return AuthResult.FailureResult(
+                    "Unable to sign in with this Google account.");
             }
 
-            return AuthResult.SuccessResult("Google login successful.", _tokenService.CreateAccessToken(user));
+            // Issue Fundoo's own JWT. Do not return Google's ID token
+            // as the application's access token.
+            string fundooToken = _tokenService.CreateAccessToken(user);
+
+            return AuthResult.SuccessResult(
+                "Google login successful.",
+                fundooToken);
         }
         public async Task<AuthResult> ForgotPasswordAsync(string email, CancellationToken cancellationToken)
         {

@@ -48,7 +48,8 @@ namespace Fundoo.User.Infrastructure.Persistence
                     .HasMaxLength(255);
 
                 entity.HasIndex(user => user.GoogleSubject)
-                    .IsUnique();
+                    .IsUnique()
+                    .HasFilter("\"GoogleSubject\" IS NOT NULL");
 
                 entity.Property(user => user.IsActive)
                     .IsRequired();
@@ -82,6 +83,7 @@ namespace Fundoo.User.Infrastructure.Persistence
 
                 entity.HasIndex(token => token.ExpiresAtUtc);
             });
+
         }
     }
 }

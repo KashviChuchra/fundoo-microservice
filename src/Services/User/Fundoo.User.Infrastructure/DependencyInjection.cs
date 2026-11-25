@@ -11,6 +11,7 @@ using Polly;
 using Microsoft.Extensions.Http.Resilience;
 using Fundoo.User.Infrastructure.Messaging.Http;
 using Fundoo.User.Infrastructure.Messaging.Kafka;
+using Fundoo.User.Infrastructure.Authentication;
 
 namespace Fundoo.User.Infrastructure
 {
