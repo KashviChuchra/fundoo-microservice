@@ -1,6 +1,8 @@
 using Fundoo.User.Api.Contracts;
 using Fundoo.User.Application.Interface;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 using FluentValidation;
 
 namespace Fundoo.User.Api.Controllers
@@ -16,6 +18,17 @@ namespace Fundoo.User.Api.Controllers
         {
             _authService = authService;
             _registerValidator = registerValidator;
+        }
+
+        [Authorize]
+        [HttpGet("me")]
+        public IActionResult GetCurrentUser()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
+            var email = User.FindFirstValue("email") ?? User.FindFirstValue(ClaimTypes.Email);
+            return string.IsNullOrWhiteSpace(userId)
+                ? Unauthorized()
+                : Ok(new { userId, email });
         }
 
         

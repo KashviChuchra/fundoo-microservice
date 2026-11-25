@@ -30,8 +30,8 @@ namespace Fundoo.Notes.Application.Services
                 IsPinned = request.IsPinned,
                 IsArchived = false,
                 IsTrashed = false,
-                CreatedAtUtc = DateTime.UtcNow,
-                UpdatedAtUtc = DateTime.UtcNow
+                CreatedAtUtc = GetDatabasePrecisionUtcNow(),
+                UpdatedAtUtc = GetDatabasePrecisionUtcNow()
             };
 
             var createdNote = await _noteRepository.CreateAsync(note, cancellationToken);
@@ -87,32 +87,57 @@ namespace Fundoo.Notes.Application.Services
                 throw new ArgumentException("Note title is required.");
             }
 
+            if (request.ExpectedUpdatedAtUtc == default)
+            {
+                throw new ArgumentException("ExpectedUpdatedAtUtc is required. Use the timestamp returned when the note was opened.");
+            }
+
             var note = await _noteRepository.GetByIdAsync(
                 id,
                 userId,
                 cancellationToken);
 
-            if (note is null || note.IsTrashed)
+            if (note is null)
             {
                 return null;
             }
 
+            if (note.UpdatedAtUtc != request.ExpectedUpdatedAtUtc)
+            {
+                throw new NoteConcurrencyException(note.UpdatedAtUtc);
+            }
+
+            if (note.IsTrashed)
+            {
+                return null;
+            }
+
+            var expectedUpdatedAtUtc = request.ExpectedUpdatedAtUtc;
             note.Title = request.Title.Trim();
             note.Content = request.Content;
             note.Color = string.IsNullOrWhiteSpace(request.Color)
                 ? "#FFFFFF"
                 : request.Color.Trim();
             note.IsPinned = request.IsPinned;
-            note.UpdatedAtUtc = DateTime.UtcNow;
+            note.UpdatedAtUtc = GetDatabasePrecisionUtcNow();
 
-            var updated = await _noteRepository.UpdateAsync(
+            var updatedAtUtc = await _noteRepository.UpdateAsync(
                 note,
+                userId,
+                expectedUpdatedAtUtc,
                 cancellationToken);
 
-            if (!updated)
+            if (updatedAtUtc is null)
             {
+                var latest = await _noteRepository.GetByIdAsync(id, userId, cancellationToken);
+                if (latest is not null)
+                {
+                    throw new NoteConcurrencyException(latest.UpdatedAtUtc);
+                }
                 return null;
             }
+
+            note.UpdatedAtUtc = updatedAtUtc.Value;
 
             return MapToResponse(note);
         }
@@ -200,6 +225,22 @@ namespace Fundoo.Notes.Application.Services
                 cancellationToken);
         }
 
+        public Task<bool> AddCollaboratorAsync(Guid noteId, Guid ownerId, Guid collaboratorId, CancellationToken cancellationToken)
+        {
+            if (ownerId == collaboratorId) throw new ArgumentException("The note owner is already authorized.");
+            return _noteRepository.AddCollaboratorAsync(noteId, ownerId, collaboratorId, cancellationToken);
+        }
+
+        public Task<bool> RemoveCollaboratorAsync(Guid noteId, Guid ownerId, Guid collaboratorId, CancellationToken cancellationToken)
+        {
+            return _noteRepository.RemoveCollaboratorAsync(noteId, ownerId, collaboratorId, cancellationToken);
+        }
+
+        public Task<IReadOnlyList<Guid>?> GetCollaboratorsAsync(Guid noteId, Guid ownerId, CancellationToken cancellationToken)
+        {
+            return _noteRepository.GetCollaboratorsAsync(noteId, ownerId, cancellationToken);
+        }
+
         // ------------------Helper Methods ---------------------------------------
         private static NoteResponse MapToResponse(Note note)
         {
@@ -217,6 +258,22 @@ namespace Fundoo.Notes.Application.Services
                 UpdatedAtUtc = note.UpdatedAtUtc,
                 LabelIds = note.NoteLabels.Select(noteLabel => noteLabel.LabelId).ToList()
             };
+        }
+
+        private static DateTime GetDatabasePrecisionUtcNow()
+        {
+            var now = DateTime.UtcNow;
+            return new DateTime(now.Ticks - now.Ticks % 10, DateTimeKind.Utc);
+        }
+    }
+
+    public sealed class NoteConcurrencyException : Exception
+    {
+        public DateTime CurrentUpdatedAtUtc { get; }
+
+        public NoteConcurrencyException(DateTime currentUpdatedAtUtc) : base("The note was changed after you opened it. Reload the latest version before saving.")
+        {
+            CurrentUpdatedAtUtc = currentUpdatedAtUtc;
         }
     }
 }

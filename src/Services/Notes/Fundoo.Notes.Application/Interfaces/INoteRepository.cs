@@ -12,10 +12,13 @@ namespace Fundoo.Notes.Application.Interfaces
         Task<IReadOnlyList<Note>> GetArchivedNotesAsync(Guid userId,CancellationToken cancellationToken);
         Task<IReadOnlyList<Note>> GetTrashedNotesAsync(Guid userId,CancellationToken cancellationToken);
         Task<Note?> GetByIdAsync(Guid id,Guid userId,CancellationToken cancellationToken);
-        Task<bool> UpdateAsync(Note note,CancellationToken cancellationToken);
+        Task<DateTime?> UpdateAsync(Note note, Guid actorId, DateTime expectedUpdatedAtUtc, CancellationToken cancellationToken);
         Task<bool> DeleteAsync(Guid id,Guid userId,CancellationToken cancellationToken);
         Task<bool> SetArchivedAsync(Guid id,Guid userId,bool isArchived,CancellationToken cancellationToken);
         Task<bool> SetTrashedAsync(Guid id,Guid userId,bool isTrashed,CancellationToken cancellationToken);
         Task<bool> SetPinnedAsync(Guid id,Guid userId,bool isPinned,CancellationToken cancellationToken);
+        Task<bool> AddCollaboratorAsync(Guid noteId, Guid ownerId, Guid collaboratorId, CancellationToken cancellationToken);
+        Task<bool> RemoveCollaboratorAsync(Guid noteId, Guid ownerId, Guid collaboratorId, CancellationToken cancellationToken);
+        Task<IReadOnlyList<Guid>?> GetCollaboratorsAsync(Guid noteId, Guid ownerId, CancellationToken cancellationToken);
     }
 }

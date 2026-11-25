@@ -17,5 +17,8 @@ namespace Fundoo.Notes.Application.Interfaces
         Task<bool> RestoreAsync(Guid id,Guid userId,CancellationToken cancellationToken);
         Task<bool> PinAsync(Guid id,Guid userId,CancellationToken cancellationToken);
         Task<bool> UnpinAsync(Guid id,Guid userId,CancellationToken cancellationToken);
+        Task<bool> AddCollaboratorAsync(Guid noteId, Guid ownerId, Guid collaboratorId, CancellationToken cancellationToken);
+        Task<bool> RemoveCollaboratorAsync(Guid noteId, Guid ownerId, Guid collaboratorId, CancellationToken cancellationToken);
+        Task<IReadOnlyList<Guid>?> GetCollaboratorsAsync(Guid noteId, Guid ownerId, CancellationToken cancellationToken);
     }
 }

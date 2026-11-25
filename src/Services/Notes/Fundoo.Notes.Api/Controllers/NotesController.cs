@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Asp.Versioning;
 using Fundoo.Notes.Application.DTOs.Notes;
 using Fundoo.Notes.Application.Interfaces;
+using Fundoo.Notes.Api.Contracts;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -138,6 +139,14 @@ namespace Fundoo.Notes.Api.Controllers
             {
                 return BadRequest(new { message = ex.Message });
             }
+            catch (Fundoo.Notes.Application.Services.NoteConcurrencyException ex)
+            {
+                return Conflict(new
+                {
+                    message = ex.Message,
+                    currentUpdatedAtUtc = ex.CurrentUpdatedAtUtc
+                });
+            }
         }
 
         [HttpDelete("{id:guid}")]
@@ -159,6 +168,43 @@ namespace Fundoo.Notes.Api.Controllers
             }
 
             return NoContent();
+        }
+
+        [HttpPost("{id:guid}/collaborators")]
+        public async Task<IActionResult> AddCollaborator(Guid id, [FromBody] AddCollaboratorRequest request, CancellationToken cancellationToken)
+        {
+            var ownerId = GetUserId();
+            if (ownerId is null) return Unauthorized();
+            if (request.UserId == Guid.Empty) return BadRequest(new { message = "A valid collaborator userId is required." });
+            try
+            {
+                var added = await _noteService.AddCollaboratorAsync(id, ownerId.Value, request.UserId, cancellationToken);
+                return added ? NoContent() : NotFound(new { message = "Note not found or collaborator already has access." });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [HttpGet("{id:guid}/collaborators")]
+        public async Task<IActionResult> GetCollaborators(Guid id, CancellationToken cancellationToken)
+        {
+            var ownerId = GetUserId();
+            if (ownerId is null) return Unauthorized();
+            var collaborators = await _noteService.GetCollaboratorsAsync(id, ownerId.Value, cancellationToken);
+            return collaborators is null
+                ? NotFound(new { message = "Note not found." })
+                : Ok(collaborators.Select(userId => new CollaboratorResponse(userId)));
+        }
+
+        [HttpDelete("{id:guid}/collaborators/{collaboratorId:guid}")]
+        public async Task<IActionResult> RemoveCollaborator(Guid id, Guid collaboratorId, CancellationToken cancellationToken)
+        {
+            var ownerId = GetUserId();
+            if (ownerId is null) return Unauthorized();
+            var removed = await _noteService.RemoveCollaboratorAsync(id, ownerId.Value, collaboratorId, cancellationToken);
+            return removed ? NoContent() : NotFound(new { message = "Note or collaborator not found." });
         }
 
         [HttpPatch("{id:guid}/archive")]

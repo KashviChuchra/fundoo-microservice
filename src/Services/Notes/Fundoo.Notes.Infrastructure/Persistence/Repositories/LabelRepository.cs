@@ -141,15 +141,22 @@ namespace Fundoo.Notes.Infrastructure.Persistence.Repositories
             await using var connection = await _connectionFactory.CreateConnectionAsync(cancellationToken);
 
             const string query = """
-                INSERT INTO note_labels (note_id, label_id)
-                SELECT n.id, l.id
+                WITH linked AS (
+                    INSERT INTO note_labels (note_id, label_id)
+                    SELECT n.id, l.id
                 FROM notes n
                 INNER JOIN labels l
                     ON l.id = @labelId
                    AND l.user_id = @userId
                 WHERE n.id = @noteId
-                  AND n.user_id = @userId
-                ON CONFLICT (note_id, label_id) DO NOTHING;
+                  AND (n.user_id = @userId OR EXISTS (
+                      SELECT 1 FROM note_collaborators c WHERE c.note_id = n.id AND c.user_id = @userId))
+                    ON CONFLICT (note_id, label_id) DO NOTHING
+                    RETURNING note_id
+                )
+                UPDATE notes
+                SET updated_at_utc = GREATEST(@updatedAtUtc, notes.updated_at_utc + INTERVAL '1 microsecond')
+                WHERE id IN (SELECT note_id FROM linked);
                 """;
 
             await using var command = new NpgsqlCommand(query, connection);
@@ -157,6 +164,8 @@ namespace Fundoo.Notes.Infrastructure.Persistence.Repositories
             command.Parameters.AddWithValue("noteId", noteId);
             command.Parameters.AddWithValue("labelId", labelId);
             command.Parameters.AddWithValue("userId", userId);
+            var now = DateTime.UtcNow;
+            command.Parameters.AddWithValue("updatedAtUtc", new DateTime(now.Ticks - now.Ticks % 10, DateTimeKind.Utc));
 
             int rowsAffected = await command.ExecuteNonQueryAsync(cancellationToken);
 
@@ -167,14 +176,20 @@ namespace Fundoo.Notes.Infrastructure.Persistence.Repositories
             await using var connection = await _connectionFactory.CreateConnectionAsync(cancellationToken);
 
             const string query = """
+                WITH unlinked AS (
                 DELETE FROM note_labels nl
                 USING notes n, labels l
                 WHERE nl.note_id = n.id
                   AND nl.label_id = l.id
                   AND n.id = @noteId
                   AND l.id = @labelId
-                  AND n.user_id = @userId
-                  AND l.user_id = @userId;
+                  AND (n.user_id = @userId OR EXISTS (
+                      SELECT 1 FROM note_collaborators c WHERE c.note_id = n.id AND c.user_id = @userId))
+                RETURNING nl.note_id
+                )
+                UPDATE notes
+                SET updated_at_utc = GREATEST(@updatedAtUtc, notes.updated_at_utc + INTERVAL '1 microsecond')
+                WHERE id IN (SELECT note_id FROM unlinked);
                 """;
 
             await using var command = new NpgsqlCommand(query, connection);
@@ -182,6 +197,8 @@ namespace Fundoo.Notes.Infrastructure.Persistence.Repositories
             command.Parameters.AddWithValue("noteId", noteId);
             command.Parameters.AddWithValue("labelId", labelId);
             command.Parameters.AddWithValue("userId", userId);
+            var now = DateTime.UtcNow;
+            command.Parameters.AddWithValue("updatedAtUtc", new DateTime(now.Ticks - now.Ticks % 10, DateTimeKind.Utc));
 
             int rowsAffected = await command.ExecuteNonQueryAsync(cancellationToken);
 

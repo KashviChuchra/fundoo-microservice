@@ -59,7 +59,7 @@ namespace Fundoo.Notes.Infrastructure.Persistence.Repositories
             const string query = """
                 SELECT *
                 FROM notes
-                WHERE user_id = @userId
+                WHERE (user_id = @userId OR EXISTS (SELECT 1 FROM note_collaborators c WHERE c.note_id = notes.id AND c.user_id = @userId))
                   AND is_archived = FALSE
                   AND is_trashed = FALSE
                 ORDER BY updated_at_utc DESC;
@@ -73,7 +73,7 @@ namespace Fundoo.Notes.Infrastructure.Persistence.Repositories
             const string query = """
                 SELECT *
                 FROM notes
-                WHERE user_id = @userId
+                WHERE (user_id = @userId OR EXISTS (SELECT 1 FROM note_collaborators c WHERE c.note_id = notes.id AND c.user_id = @userId))
                   AND is_archived = TRUE
                   AND is_trashed = FALSE
                 ORDER BY updated_at_utc DESC;
@@ -87,7 +87,7 @@ namespace Fundoo.Notes.Infrastructure.Persistence.Repositories
             const string query = """
                 SELECT *
                 FROM notes
-                WHERE user_id = @userId
+                WHERE (user_id = @userId OR EXISTS (SELECT 1 FROM note_collaborators c WHERE c.note_id = notes.id AND c.user_id = @userId))
                   AND is_trashed = TRUE
                 ORDER BY updated_at_utc DESC;
                 """;
@@ -103,7 +103,7 @@ namespace Fundoo.Notes.Infrastructure.Persistence.Repositories
                 SELECT *
                 FROM notes
                 WHERE id = @id
-                  AND user_id = @userId;
+                  AND (user_id = @userId OR EXISTS (SELECT 1 FROM note_collaborators c WHERE c.note_id = notes.id AND c.user_id = @userId));
                 """;
 
             await using var command = new NpgsqlCommand(query, connection);
@@ -127,7 +127,7 @@ namespace Fundoo.Notes.Infrastructure.Persistence.Repositories
             return note;
         }
 
-        public async Task<bool> UpdateAsync(Note note, CancellationToken cancellationToken)
+        public async Task<DateTime?> UpdateAsync(Note note, Guid actorId, DateTime expectedUpdatedAtUtc, CancellationToken cancellationToken)
         {
             
             await using var connection = await _connectionFactory.CreateConnectionAsync(cancellationToken);
@@ -138,16 +138,18 @@ namespace Fundoo.Notes.Infrastructure.Persistence.Repositories
                     content = @content,
                     color = @color,
                     is_pinned = @isPinned,
-                    updated_at_utc = @updatedAtUtc
+                    updated_at_utc = GREATEST(@updatedAtUtc, updated_at_utc + INTERVAL '1 microsecond')
                 WHERE id = @id
-                  AND user_id = @userId
-                  AND is_trashed = FALSE;
+                  AND (user_id = @actorId OR EXISTS (SELECT 1 FROM note_collaborators c WHERE c.note_id = notes.id AND c.user_id = @actorId))
+                  AND is_trashed = FALSE
+                  AND updated_at_utc = @expectedUpdatedAtUtc
+                RETURNING updated_at_utc;
                 """;
 
             await using var command = new NpgsqlCommand(query, connection);
 
             command.Parameters.AddWithValue("id", note.Id);
-            command.Parameters.AddWithValue("userId", note.UserId);
+            command.Parameters.AddWithValue("actorId", actorId);
             command.Parameters.AddWithValue("title", note.Title);
             command.Parameters.Add("content", NpgsqlDbType.Text).Value =(object?)note.Content ?? DBNull.Value;
             command.Parameters.AddWithValue("color", note.Color);
@@ -155,10 +157,10 @@ namespace Fundoo.Notes.Infrastructure.Persistence.Repositories
 
             // Use the timestamp assigned by NoteService.
             command.Parameters.AddWithValue("updatedAtUtc", note.UpdatedAtUtc);
+            command.Parameters.AddWithValue("expectedUpdatedAtUtc", expectedUpdatedAtUtc);
 
-            int rowsAffected = await command.ExecuteNonQueryAsync(cancellationToken);
-
-            return rowsAffected > 0;
+            var result = await command.ExecuteScalarAsync(cancellationToken);
+            return result is DateTime updatedAtUtc ? updatedAtUtc : null;
         }
 
         public async Task<bool> DeleteAsync(Guid id, Guid userId, CancellationToken cancellationToken)
@@ -186,9 +188,9 @@ namespace Fundoo.Notes.Infrastructure.Persistence.Repositories
             const string query = """
                 UPDATE notes
                 SET is_archived = @isArchived,
-                    updated_at_utc = @updatedAtUtc
+                    updated_at_utc = GREATEST(@updatedAtUtc, updated_at_utc + INTERVAL '1 microsecond')
                 WHERE id = @id
-                  AND user_id = @userId
+                  AND (user_id = @userId OR EXISTS (SELECT 1 FROM note_collaborators c WHERE c.note_id = notes.id AND c.user_id = @userId))
                   AND is_trashed = FALSE;
                 """;
 
@@ -204,9 +206,9 @@ namespace Fundoo.Notes.Infrastructure.Persistence.Repositories
                         WHEN @isTrashed THEN FALSE
                         ELSE is_archived
                     END,
-                    updated_at_utc = @updatedAtUtc
+                    updated_at_utc = GREATEST(@updatedAtUtc, updated_at_utc + INTERVAL '1 microsecond')
                 WHERE id = @id
-                  AND user_id = @userId;
+                  AND (user_id = @userId OR EXISTS (SELECT 1 FROM note_collaborators c WHERE c.note_id = notes.id AND c.user_id = @userId));
                 """;
 
             return await ExecuteStateUpdateAsync(query,id,userId,"isTrashed",isTrashed,cancellationToken);
@@ -217,13 +219,69 @@ namespace Fundoo.Notes.Infrastructure.Persistence.Repositories
             const string query = """
                 UPDATE notes
                 SET is_pinned = @isPinned,
-                    updated_at_utc = @updatedAtUtc
+                    updated_at_utc = GREATEST(@updatedAtUtc, updated_at_utc + INTERVAL '1 microsecond')
                 WHERE id = @id
-                  AND user_id = @userId
+                  AND (user_id = @userId OR EXISTS (SELECT 1 FROM note_collaborators c WHERE c.note_id = notes.id AND c.user_id = @userId))
                   AND is_trashed = FALSE;
                 """;
 
             return await ExecuteStateUpdateAsync(query,id,userId,"isPinned",isPinned,cancellationToken);
+        }
+
+        public async Task<bool> AddCollaboratorAsync(Guid noteId, Guid ownerId, Guid collaboratorId, CancellationToken cancellationToken)
+        {
+            await using var connection = await _connectionFactory.CreateConnectionAsync(cancellationToken);
+            const string query = """
+                INSERT INTO note_collaborators (note_id, user_id)
+                SELECT id, @collaboratorId FROM notes
+                WHERE id = @noteId AND user_id = @ownerId AND is_trashed = FALSE
+                ON CONFLICT (note_id, user_id) DO NOTHING;
+                """;
+            await using var command = new NpgsqlCommand(query, connection);
+            command.Parameters.AddWithValue("noteId", noteId);
+            command.Parameters.AddWithValue("ownerId", ownerId);
+            command.Parameters.AddWithValue("collaboratorId", collaboratorId);
+            return await command.ExecuteNonQueryAsync(cancellationToken) > 0;
+        }
+
+        public async Task<bool> RemoveCollaboratorAsync(Guid noteId, Guid ownerId, Guid collaboratorId, CancellationToken cancellationToken)
+        {
+            await using var connection = await _connectionFactory.CreateConnectionAsync(cancellationToken);
+            const string query = """
+                DELETE FROM note_collaborators c
+                USING notes n
+                WHERE c.note_id = n.id AND n.id = @noteId AND n.user_id = @ownerId
+                  AND c.user_id = @collaboratorId;
+                """;
+            await using var command = new NpgsqlCommand(query, connection);
+            command.Parameters.AddWithValue("noteId", noteId);
+            command.Parameters.AddWithValue("ownerId", ownerId);
+            command.Parameters.AddWithValue("collaboratorId", collaboratorId);
+            return await command.ExecuteNonQueryAsync(cancellationToken) > 0;
+        }
+
+        public async Task<IReadOnlyList<Guid>?> GetCollaboratorsAsync(Guid noteId, Guid ownerId, CancellationToken cancellationToken)
+        {
+            await using var connection = await _connectionFactory.CreateConnectionAsync(cancellationToken);
+            const string query = """
+                SELECT c.user_id FROM note_collaborators c
+                INNER JOIN notes n ON n.id = c.note_id
+                WHERE n.id = @noteId AND n.user_id = @ownerId
+                ORDER BY c.created_at_utc;
+                """;
+            await using var command = new NpgsqlCommand(query, connection);
+            command.Parameters.AddWithValue("noteId", noteId);
+            command.Parameters.AddWithValue("ownerId", ownerId);
+            await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+            var collaborators = new List<Guid>();
+            while (await reader.ReadAsync(cancellationToken)) collaborators.Add(reader.GetGuid(0));
+            if (collaborators.Count > 0) return collaborators;
+
+            await reader.CloseAsync();
+            await using var existsCommand = new NpgsqlCommand("SELECT EXISTS (SELECT 1 FROM notes WHERE id = @noteId AND user_id = @ownerId);", connection);
+            existsCommand.Parameters.AddWithValue("noteId", noteId);
+            existsCommand.Parameters.AddWithValue("ownerId", ownerId);
+            return (bool)(await existsCommand.ExecuteScalarAsync(cancellationToken) ?? false) ? collaborators : null;
         }
 
 
@@ -292,7 +350,8 @@ namespace Fundoo.Notes.Infrastructure.Persistence.Repositories
             command.Parameters.AddWithValue("id", id);
             command.Parameters.AddWithValue("userId", userId);
             command.Parameters.AddWithValue(parameterName, value);
-            command.Parameters.AddWithValue("updatedAtUtc", DateTime.UtcNow);
+            var now = DateTime.UtcNow;
+            command.Parameters.AddWithValue("updatedAtUtc", new DateTime(now.Ticks - now.Ticks % 10, DateTimeKind.Utc));
 
             int rowsAffected =await command.ExecuteNonQueryAsync(cancellationToken);
 
